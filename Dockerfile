@@ -20,8 +20,7 @@ RUN set -x \
 	&& chmod +x /usr/local/bin/gosu \
 	&& gosu nobody true
 
-ENV TMPDIR=/tmp \
-	BARMAN_LOG_FILE=/var/log/barman.log \
+ENV BARMAN_LOG_FILE=/var/log/barman.log \
 	BARMAN_BARMAN_HOME=/var/lib/barman \
 	BARMAN_CONFIGURATION_FILES_DIRECTORY=/etc/barman.d
 
