@@ -19,8 +19,14 @@ generate_configuration() {
 }
 
 generate_cron () {
-	cron
-	gosu barman bash -c "echo '* * * * * barman cron' | crontab -"	
+	cron # deamon
+	cat <<- EOF > "/tmp/cron.jobs"
+		$(env | grep -e "^BARMAN_")
+		* * * * * barman cron
+		* * * * * /opt/barman/scripts/backup_scheduler.sh
+	EOF
+	cat "/tmp/cron.jobs"
+	gosu barman bash -c "crontab /tmp/cron.jobs"	
 }
 
 ensure_permissions() {

@@ -1,3 +1,5 @@
+#ATTENTION WIP!
+
 # docker-barman
 A pgbarman docker image with prometheus metrics
 
@@ -21,4 +23,9 @@ All `ENV` variables that starts with `BARMAN_` will be converted read and covert
 
 Alternatively it is possible to mount a volume file in `$BARMAN_BARMAN_HOME/.barman.conf` thar will override the base config file.
 
-For server configurations provide a file per server in `/etc/barman.d/`.
+### Configuring servers
+
+For server configurations provide a file per server in `/etc/barman.d/` as stated in the conf filenkjsajkfjsadf.
+
+Also the image runs a every minute script that mainstains a crontab blblablabbla
+

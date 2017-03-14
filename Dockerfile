@@ -20,13 +20,16 @@ RUN set -x \
 	&& chmod +x /usr/local/bin/gosu \
 	&& gosu nobody true
 
-ENV BARMAN_LOG_FILE=/var/log/barman.log \
-	BARMAN_BARMAN_HOME=/var/lib/barman \
-	BARMAN_CONFIGURATION_FILES_DIRECTORY=/etc/barman.d
-
 VOLUME /etc/barman.d/
 VOLUME /var/lib/barman/
 
+ENV BARMAN_LOG_FILE=/var/log/barman.log \
+	BARMAN_BARMAN_HOME=/var/lib/barman \
+	BARMAN_CONFIGURATION_FILES_DIRECTORY=/etc/barman.d \
+	BARMAN_PRE_BACKUP_SCRIPT=/opt/barman/scripts/pre_backup.sh \
+	BARMAN_POST_BACKUP_SCRIPT=/opt/barman/scripts/post_backup.sh
+
+COPY scripts /opt/barman/scripts
 COPY docker-entrypoint.sh /
 
 WORKDIR $BARMAN_BARMAN_HOME
