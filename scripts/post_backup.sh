@@ -14,7 +14,7 @@
 set -e
 
 BACKUP_END_TIME=$(date +%s%N)
-BACKUP_START_TIME=$(grep "$BARMAN_SERVER $BARMAN_BACKUP_ID start" /tmp/backups.log | cut -d' ' -f3 | xargs)
+BACKUP_START_TIME=$(grep "$BARMAN_SERVER $BARMAN_BACKUP_ID start" /tmp/backups.log | cut -d' ' -f4 | xargs)
 BACKUP_DURATION_SECONDS=$(((BACKUP_END_TIME-BACKUP_START_TIME)/1000000000))
 
 echo "$BARMAN_SERVER $BARMAN_BACKUP_ID end $BACKUP_END_TIME" >> /tmp/backups.log

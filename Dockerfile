@@ -4,9 +4,11 @@ RUN apt-get update && apt-get install -y wget cron
 
 RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" > /etc/apt/sources.list.d/pgdg.list' && \
 	wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
-	apt-get update && apt-get install -y postgresql-client barman
+	apt-get update && apt-get install -y postgresql-client barman python-pip
 
-#RUN apt-get purge -y wget && apt-get clean && rm -rf /var/lib/apt/lists/* /var/tmp/*
+RUN pip install prometheus_client
+
+#RUN apt-get purge -y python-pip wget && apt-get clean && rm -rf /var/lib/apt/lists/* /var/tmp/*
 
 # grab gosu for easy step-down from root
 ENV GOSU_VERSION 1.7
@@ -28,6 +30,7 @@ ENV BARMAN_LOG_FILE=/var/log/barman.log \
 	BARMAN_CONFIGURATION_FILES_DIRECTORY=/etc/barman.d \
 	BARMAN_PRE_BACKUP_SCRIPT=/opt/barman/scripts/pre_backup.sh \
 	BARMAN_POST_BACKUP_SCRIPT=/opt/barman/scripts/post_backup.sh
+
 
 COPY scripts /opt/barman/scripts
 COPY docker-entrypoint.sh /
