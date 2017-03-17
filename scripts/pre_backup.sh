@@ -13,4 +13,4 @@
 
 set -e
 
-echo "$BARMAN_SERVER $BARMAN_BACKUP_ID start $(date +%s%N)" >> /tmp/backups.log
+echo "$BARMAN_SERVER $BARMAN_BACKUP_ID start $(date +%s%N)" > "/tmp/backups_$BARMAN_SERVER.log"

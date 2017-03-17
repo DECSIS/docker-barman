@@ -21,6 +21,7 @@ generate_configuration() {
 generate_cron () {
 	cron # deamon
 	cat <<- EOF > "/tmp/cron.jobs"
+		MAILTO="" 
 		$(env | grep -e "^BARMAN_")
 		* * * * * barman cron
 		* * * * * /opt/barman/scripts/backup_scheduler.sh
@@ -30,7 +31,7 @@ generate_cron () {
 }
 
 ensure_permissions() {
-	touch $BARMAN_LOG_FILE
+	touch "$BARMAN_LOG_FILE"
 	for path in \
 		/etc/barman.conf \
 		"$BARMAN_BARMAN_HOME" \
@@ -41,10 +42,15 @@ ensure_permissions() {
 	done	
 }
 
+prometheus_metrics_exporter_deamon(){
+	python /opt/barman/scripts/prom_exporter.py &	
+}
+
 if [ "$1" = 'barman' ]; then
 	generate_configuration
 	generate_cron	
 	ensure_permissions
+	prometheus_metrics_exporter_deamon
 	exec gosu barman bash -c 'tail -f "$BARMAN_LOG_FILE" 2>&1'
 fi
 
