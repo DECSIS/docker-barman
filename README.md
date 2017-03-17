@@ -88,4 +88,4 @@ It will generate the following metrics:
 * *barman_last_backup_age_seconds* Last backup age
 * *barman_current_redundancy* Number of existing backups
 
-A sample scrapee config is available in [example/prometheus_config.yml]()
+A sample scrape config is available in [example/prometheus_config.yml]()

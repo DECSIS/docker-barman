@@ -28,6 +28,8 @@ services:
     stdin_open: true
     volumes:
       - ./example/init-barman-users.sh:/docker-entrypoint-initdb.d/init-barman-users.sh
+      - ./example/server.crt:/server.crt
+      - ./example/server.key:/server.key
     tty: true
     ports:
       - 5436:5432/tcp
@@ -40,8 +42,16 @@ services:
       - max_replication_slots=10
       - -c
       - hot_standby=on
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/server.crt
+      - -c
+      - ssl_key_file=/server.key
   barman:
     image: decsis/pg-barman
+    environment:
+      BARMAN_LOG_LEVEL: WARNING
     volumes:
       - ./example/postgreslab1.conf:/etc/barman.d/postgreslab1.conf
       - ./example/postgreslab2.conf:/etc/barman.d/postgreslab2.conf
