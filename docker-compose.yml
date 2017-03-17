@@ -1,0 +1,55 @@
+version: '2'
+services:
+  postgreslab1:
+    image: postgres:9.6.2
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    stdin_open: true
+    volumes:
+      - ./example/init-barman-users.sh:/docker-entrypoint-initdb.d/init-barman-users.sh
+    tty: true
+    ports:
+      - 5435:5432/tcp
+    command:
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+      - -c
+      - hot_standby=on
+  postgreslab2:
+    image: postgres:9.6.2
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    stdin_open: true
+    volumes:
+      - ./example/init-barman-users.sh:/docker-entrypoint-initdb.d/init-barman-users.sh
+    tty: true
+    ports:
+      - 5436:5432/tcp
+    command:
+      - -c
+      - wal_level=replica
+      - -c
+      - max_wal_senders=10
+      - -c
+      - max_replication_slots=10
+      - -c
+      - hot_standby=on
+  barman:
+    image: decsis/pg-barman
+    volumes:
+      - ./example/postgreslab1.conf:/etc/barman.d/postgreslab1.conf
+      - ./example/postgreslab2.conf:/etc/barman.d/postgreslab2.conf
+    ports:
+      - 8000:8000/tcp
+  prometheus:
+    image: quay.io/prometheus/prometheus
+    ports:
+      - 9090:9090/tcp
+    volumes:
+      - ./example/prometheus_config.yml:/etc/prometheus/prometheus.yml
