@@ -16,7 +16,7 @@ The image currently is focused on streaming replication so no rsync streaming or
 
     $ docker run -v /path/to/db/configs:/etc/barman.d/ -v /path/to/backupdata/:/var/lib/barman/ decsis/pg-barman
 
-For an full overview of using this image with a server check the example configuration for in the [docker-compose.yml](). If you run this compose file you will obtain a PostgresSQL server and a Barman scheduled to make full backups every hour.
+For an full overview of using this image with a server check the example configuration for in the [docker-compose.yml](). If you run this compose file you will obtain two PostgresSQL servers and a Barman scheduled to make full backups every hour for server1 and every 6 hours to server2. Also a Prometheus server will be available to gather metrics from the exporter included in the image.
 
     docker-compose up
 
@@ -71,7 +71,7 @@ The image runs a every minute script that maintains (insert, update and delete) 
     28 10 * * * barman backup postgreslab3
 
 
-**Important**: Please notice that this additional property is prefixed by `#:` so barman dos not complain (outputing a warning) about an unknown property. The `:` is there to make clear this is not just a comment.
+**Important**: Please notice that this additional property is prefixed by `#:` to avoid barman complaining about an unknown property. The `:` is there to make clear this is not just a comment.
 
 ## Available metrics
 
