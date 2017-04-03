@@ -29,7 +29,8 @@ ENV BARMAN_LOG_FILE=/var/log/barman.log \
 	BARMAN_BARMAN_HOME=/var/lib/barman \
 	BARMAN_CONFIGURATION_FILES_DIRECTORY=/etc/barman.d \
 	BARMAN_PRE_BACKUP_SCRIPT=/opt/barman/scripts/pre_backup.sh \
-	BARMAN_POST_BACKUP_SCRIPT=/opt/barman/scripts/post_backup.sh
+	BARMAN_POST_BACKUP_SCRIPT=/opt/barman/scripts/post_backup.sh \
+	PROM_EXPORTER_LOG_FILE="/var/log/barman_prom_exporter.log"
 
 
 COPY scripts /opt/barman/scripts

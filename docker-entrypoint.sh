@@ -43,7 +43,7 @@ ensure_permissions() {
 }
 
 prometheus_metrics_exporter_deamon(){
-	python /opt/barman/scripts/prom_exporter.py &	
+	python /opt/barman/scripts/prom_exporter.py >> "$PROM_EXPORTER_LOG_FILE" &	
 }
 
 if [ "$1" = 'barman' ]; then
@@ -51,7 +51,7 @@ if [ "$1" = 'barman' ]; then
 	generate_cron	
 	ensure_permissions
 	prometheus_metrics_exporter_deamon
-	exec gosu barman bash -c 'tail -f "$BARMAN_LOG_FILE" 2>&1'
+	exec gosu barman bash -c 'tail -f "$BARMAN_LOG_FILE" "$PROM_EXPORTER_LOG_FILE" 2>&1'
 fi
 
 exec "$@"
