@@ -13,7 +13,7 @@
 
 set -e
 
-BACKUP_LOG_FILE="/tmp/backups_$BARMAN_SERVER.log"
+BACKUP_LOG_FILE="${BARMAN_BARMAN_HOME}/prometheus_exporter_work/backups_$BARMAN_SERVER.log"
 
 BACKUP_END_TIME=$(date +%s%N)
 BACKUP_START_TIME=$(grep "$BARMAN_SERVER $BARMAN_BACKUP_ID start" "$BACKUP_LOG_FILE" | cut -d' ' -f4 | xargs)

@@ -8,8 +8,6 @@ RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" 
 
 RUN pip install prometheus_client
 
-#RUN apt-get purge -y python-pip wget && apt-get clean && rm -rf /var/lib/apt/lists/* /var/tmp/*
-
 # grab gosu for easy step-down from root
 ENV GOSU_VERSION 1.7
 RUN set -x \
@@ -22,16 +20,18 @@ RUN set -x \
 	&& chmod +x /usr/local/bin/gosu \
 	&& gosu nobody true
 
+#RUN apt-get purge -y python-pip wget && apt-get clean && rm -rf /var/lib/apt/lists/* /var/tmp/*
+
 VOLUME /etc/barman.d/
 VOLUME /var/lib/barman/
 
 ENV BARMAN_LOG_FILE=/var/log/barman.log \
 	BARMAN_BARMAN_HOME=/var/lib/barman \
+	BARMAN_BARMAN_LOCK_DIRECTORY=/tmp \
 	BARMAN_CONFIGURATION_FILES_DIRECTORY=/etc/barman.d \
 	BARMAN_PRE_BACKUP_SCRIPT=/opt/barman/scripts/pre_backup.sh \
 	BARMAN_POST_BACKUP_SCRIPT=/opt/barman/scripts/post_backup.sh \
 	PROM_EXPORTER_LOG_FILE="/var/log/barman_prom_exporter.log"
-
 
 COPY scripts /opt/barman/scripts
 COPY docker-entrypoint.sh /

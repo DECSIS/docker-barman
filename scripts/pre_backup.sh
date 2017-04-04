@@ -13,4 +13,8 @@
 
 set -e
 
-echo "$BARMAN_SERVER $BARMAN_BACKUP_ID start $(date +%s%N)" >> "/tmp/backups_$BARMAN_SERVER.log"
+BACKUP_LOG_DIR="${BARMAN_BARMAN_HOME}/prometheus_exporter_work"
+BACKUP_LOG_FILE="${BACKUP_LOG_DIR}/backups_$BARMAN_SERVER.log"
+
+mkdir -p "$BACKUP_LOG_DIR"
+echo "$BARMAN_SERVER $BARMAN_BACKUP_ID start $(date +%s%N)" >> "$BACKUP_LOG_FILE"

@@ -5,6 +5,7 @@ import time
 import random
 import re
 import json
+import os
 import os.path
 from  datetime import datetime
 
@@ -26,15 +27,28 @@ def barman_check():
 			status.add_metric([server], e.returncode)
 	return status
 
-def add_metric_or_pass(metric,labels,value):	
+def add_metric_or_pass(metric,labels,value,default_value=None):	
 	try:		
 		if(float(value)):
 			metric.add_metric(labels, float(value))
 	except:
-		pass
-
+		if default_value:
+			metric.add_metric(labels, float(default_value))
+		else:
+			pass
 
 def backup_metrics():
+	metrics = setup_metrics()
+	diagnose_data = json.loads(subprocess.check_output(["barman","diagnose"]))
+	try:
+		for server,server_data in diagnose_data['servers'].iteritems():
+			process_server(server,server_data,metrics)
+	except Exception as e:
+		print e
+		print "ERROR: DIAGNOSE DATA -> {}".format(diagnose_data)
+	return metrics.values()
+
+def setup_metrics():
 	metrics = {}
 	metrics['database_size'] = GaugeMetricFamily('barman_database_size_bytes', 'Database size in bytes', labels=['server_name'])
 	metrics['last_backup_age'] = GaugeMetricFamily('barman_last_backup_age_seconds', 'Last backup age', labels=['server_name'])
@@ -42,45 +56,52 @@ def backup_metrics():
 	metrics['backup_duration'] = GaugeMetricFamily('barman_backup_duration_seconds', 'Backups duration in seconds', labels=['server_name'])
 	metrics['backup_window']  = GaugeMetricFamily('barman_backup_window_seconds', 'Backup window covered by all existing backups', labels=['server_name'])
 	metrics['redundancy_actual']  = GaugeMetricFamily('barman_current_redundancy', 'Number of existing backups', labels=['server_name'])
-	metrics['redundancy_expected']  = GaugeMetricFamily('barman_expected_redundancy', 'Number of expected backups as defined in config', labels=['server_name'])	
+	metrics['redundancy_expected']  = GaugeMetricFamily('barman_expected_redundancy', 'Number of expected backups as defined in config', labels=['server_name'])
+	return metrics
+
+def process_server(server,server_data,metrics):
+	if not server_data['status']['connection_error']:
+		add_metric_or_pass(metrics['database_size'], [server], server_data['status']['current_size'])
+		add_metric_or_pass(metrics['redundancy_expected'], [server], server_data['config']['minimum_redundancy'])				
+		done_backup_names = get_done_backups(server_data)
+		add_metric_or_pass(metrics['redundancy_actual'], [server], len(done_backup_names))		
+		if done_backup_names:						
+			first_backup_name = done_backup_names[0] 
+			last_backup_name = done_backup_names[-1]
+			first_date = parse_date_from_backup_name( first_backup_name )
+			last_date = parse_date_from_backup_name( last_backup_name )			
+			add_metric_or_pass(metrics['last_backup_size'],[server], server_data['backups'][last_backup_name]['size'])
+			add_metric_or_pass(metrics['last_backup_age'],[server], (datetime.utcnow()-last_date).total_seconds())
+			add_metric_or_pass(metrics['backup_window'],[server], (last_date-first_date).total_seconds())
+			add_metric_or_pass(metrics['backup_duration'],[server], backup_duration(server,last_backup_name))														
 
 
-	diagnose_data = json.loads(subprocess.check_output(["barman","diagnose"]))
 
-	try:
-		for server,server_data in diagnose_data['servers'].iteritems():
-			if not server_data['status']['connection_error']:
-				if server_data['status']['current_size']:
-					add_metric_or_pass(metrics['database_size'], [server], server_data['status']['current_size'])
-				redundancy_actual = len(server_data['backups']) if len(server_data['backups']) else 0
-				add_metric_or_pass(metrics['redundancy_actual'], [server], redundancy_actual)
-				add_metric_or_pass(metrics['redundancy_expected'], [server], server_data['config']['minimum_redundancy'])				
+def server_has_backups(server_data):
+	len(server_data['backups']) > 0
 
-				if len(server_data['backups']):
-					backup_names = sorted(server_data['backups'].keys())
-					done_backup_names = []
-					for backup_name in backup_names:
-						server_data['backups'][backup_name]['status'] != 'DONE'
-						done_backup_names.append(backup_name)
-					if len(done_backup_names):
-						first_date = parse_date_from_backup_name( done_backup_names[0])
-						last_date = parse_date_from_backup_name( done_backup_names[-1])
-						last_backup_data = server_data['backups'][done_backup_names[-1]]						
-						add_metric_or_pass(metrics['last_backup_size'],[server], last_backup_data['size'])
-						add_metric_or_pass(metrics['last_backup_age'],[server], (datetime.utcnow()-last_date).total_seconds())
-						add_metric_or_pass(metrics['backup_window'],[server], (last_date-first_date).total_seconds())
+def get_done_backups(server_data):
+	done_backup_names = []
+	backup_names = sorted(server_data['backups'].keys())
+	for backup_name in backup_names:
+		if server_data['backups'][backup_name]['status'] == 'DONE':
+			done_backup_names.append(backup_name)
+	return done_backup_names
 
-						if os.path.isfile("/tmp/backups_{}.log".format(server)):
-							try:
-								command = ["grep", "{} duration".format(done_backup_names[-1]), "/tmp/backups_{}.log".format(server)]
-								grep_output = subprocess.check_output(command)
-								add_metric_or_pass(metrics['backup_duration'],[server], grep_output.split()[3])								
-							except subprocess.CalledProcessError as e:		
-								print "{} | {} | {}".format(e.returncode,e.cmd,e.output)
-								print 'Command failed: {}'.format(' '.join(command))
-	except:
-		print "ERROR: DIAGNOSE DATA -> {}".format(diagnose_data)
-	return metrics.values()
+def backup_duration(server,backup_name):
+	backup_log_file = get_backup_log_file(server)
+	if os.path.isfile(backup_log_file):
+		try:
+			command = ["grep", "{} duration".format(backup_name), backup_log_file]
+			grep_output = subprocess.check_output(command)
+			return grep_output.split()[3]
+		except subprocess.CalledProcessError as e:		
+			print 'Command failed: {}'.format(' '.join(command))
+			print "{} | {} | {}".format(e.returncode,e.cmd,e.output)
+			return None
+
+def get_backup_log_file(server):
+	return "{}/prometheus_exporter_work/backups_{}.log".format(os.environ["BARMAN_BARMAN_HOME"],server)
 
 def parse_date_from_backup_name(backup_name):
 	try:
