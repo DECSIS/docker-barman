@@ -18,8 +18,9 @@ generate_configuration() {
 	sed -e 's/^barman_//g' "$TEMP_CONF" > "$BARMAN_CONF"
 }
 
-generate_cron () {
-	cron # deamon	
+generate_cron () {	
+	touch /etc/crontab /etc/cron.*/* #fix https://github.com/DECSIS/docker-barman/issues/11
+	/etc/init.d/cron start # deamon	
 	cat <<- EOF > "/tmp/cron.jobs"
 		MAILTO="" 
 		$(env | grep -e "^BARMAN_")
@@ -50,7 +51,7 @@ if [ "$1" = 'barman' ]; then
 	generate_configuration
 	generate_cron	
 	ensure_permissions
-	prometheus_metrics_exporter_deamon
+	prometheus_metrics_exporter_deamon	
 	exec gosu barman bash -c 'tail -f "$BARMAN_LOG_FILE" "$PROM_EXPORTER_LOG_FILE" 2>&1'
 fi
 
