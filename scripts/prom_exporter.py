@@ -54,6 +54,7 @@ def setup_metrics():
 	metrics['last_backup_age'] = GaugeMetricFamily('barman_last_backup_age_seconds', 'Last backup age', labels=['server_name'])
 	metrics['last_backup_size'] = GaugeMetricFamily('barman_last_backup_size_bytes', 'Last backup size in bytes', labels=['server_name'])
 	metrics['backup_duration'] = GaugeMetricFamily('barman_backup_duration_seconds', 'Backups duration in seconds', labels=['server_name'])
+	metrics['recovery_duration'] = GaugeMetricFamily('barman_recovery_duration_seconds', 'Recovery duration in seconds', labels=['server_name'])
 	metrics['backup_window']  = GaugeMetricFamily('barman_backup_window_seconds', 'Backup window covered by all existing backups', labels=['server_name'])
 	metrics['redundancy_actual']  = GaugeMetricFamily('barman_current_redundancy', 'Number of existing backups', labels=['server_name'])
 	metrics['redundancy_expected']  = GaugeMetricFamily('barman_expected_redundancy', 'Number of expected backups as defined in config', labels=['server_name'])
@@ -74,8 +75,7 @@ def process_server(server,server_data,metrics):
 			add_metric_or_pass(metrics['last_backup_age'],[server], (datetime.utcnow()-last_date).total_seconds())
 			add_metric_or_pass(metrics['backup_window'],[server], (last_date-first_date).total_seconds())
 			add_metric_or_pass(metrics['backup_duration'],[server], backup_duration(server,last_backup_name))														
-
-
+			add_metric_or_pass(metrics['recovery_duration'],[server], recovery_duration(server,last_backup_name))		
 
 def server_has_backups(server_data):
 	len(server_data['backups']) > 0
@@ -89,10 +89,16 @@ def get_done_backups(server_data):
 	return done_backup_names
 
 def backup_duration(server,backup_name):
+	return fetch_duration_from_log_file('duration',server,backup_name)
+
+def recovery_duration(server,backup_name):
+	return fetch_duration_from_log_file('recovery',server,backup_name)
+
+def fetch_duration_from_log_file(duration_type,server,backup_name):
 	backup_log_file = get_backup_log_file(server)
 	if os.path.isfile(backup_log_file):
 		try:
-			command = ["grep", "{} duration".format(backup_name), backup_log_file]
+			command = ["grep", "{} {}".format(backup_name,duration_type), backup_log_file]
 			grep_output = subprocess.check_output(command)
 			return grep_output.split()[3]
 		except subprocess.CalledProcessError as e:		
