@@ -77,7 +77,7 @@ The image runs a every minute script that maintains (insert, update and delete) 
 
 If this property is present after each backup of the corresponding database a recovery attempt will be performed and its duration registered as a Prometheus metric.
 
-Currently this only works with the companion image https://hub.docker.com/r/decsis/pg-barman-recovery-target/ .
+Currently this only works with the companion image https://hub.docker.com/r/decsis/postgres-ssh/ .
 
 **Important**: Please notice that this additional properties are prefixed by `#:` to avoid barman complaining about an unknown property. The `:` is there to make clear this is not just a comment.
 
