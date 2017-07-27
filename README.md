@@ -57,8 +57,11 @@ For server configurations provide a file per server in `/etc/barman.d/` as state
 Additionaly you can pass a extra configuration in these files for scheduling backups:
 
     #:backup_cron = 0 10 * * *
+    #:backup_recovery_ssh_cmd = "ssh root@rec_pg"
 
-The image runs a every minute script that maintains (insert, update and delete) the `crontab` gathering this preoperty from the available `*.conf` files. The resulting `crontab` for the previous example:
+`backup_cron` 
+
+The image runs a every minute script that maintains (insert, update and delete) the `crontab` gathering this property from the available `*.conf` files. The resulting `crontab` for the previous example:
 
     MAILTO=""
     BARMAN_LOG_FILE=/var/log/barman.log
@@ -70,8 +73,13 @@ The image runs a every minute script that maintains (insert, update and delete) 
     * * * * * /opt/barman/scripts/backup_scheduler.sh
     0 10 * * * barman backup postgreslab3
 
+`backup_recovery_ssh_cmd`
 
-**Important**: Please notice that this additional property is prefixed by `#:` to avoid barman complaining about an unknown property. The `:` is there to make clear this is not just a comment.
+If this property is present after each backup of the corresponding database a recovery attempt will be performed and its duration registered as a Prometheus metric.
+
+Currently this only works with the companion image https://hub.docker.com/r/decsis/pg-barman-recovery-target/ .
+
+**Important**: Please notice that this additional properties are prefixed by `#:` to avoid barman complaining about an unknown property. The `:` is there to make clear this is not just a comment.
 
 ## Available metrics
 
