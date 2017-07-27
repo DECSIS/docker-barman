@@ -74,7 +74,7 @@ services:
     volumes:
       - ./example/prometheus_config.yml:/etc/prometheus/prometheus.yml
   rec_pg:
-    image: decsis/pg-barman-recovery-target
+    image: decsis/postgres-ssh
     build: recovery_pg/.
     environment:
       POSTGRES_PASSWORD: postgres

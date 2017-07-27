@@ -27,7 +27,11 @@ echo "Looking for recover configs in $conf_file"
 REC_SSH_CMD="$(grep "#:backup_recovery_ssh_cmd" $conf_file |cut -d'=' -f2 | xargs)"
 if [[ ! -z $REC_SSH_CMD ]]; then
 	start=`date +%s`
-	/opt/barman/scripts/recover.sh $BARMAN_SERVER $BARMAN_BACKUP_ID "$REC_SSH_CMD"
+    if /opt/barman/scripts/recover.sh $BARMAN_SERVER $BARMAN_BACKUP_ID "$REC_SSH_CMD"; then
+		echo "$BARMAN_SERVER $BARMAN_BACKUP_ID rec_status 0" >> "$BACKUP_LOG_FILE"        
+	else
+		echo "$BARMAN_SERVER $BARMAN_BACKUP_ID rec_status 1" >> "$BACKUP_LOG_FILE"        		
+    fi 
 	end=`date +%s`
 	rec_runtime=$((end-start))
 	echo "$BARMAN_SERVER $BARMAN_BACKUP_ID recovery $rec_runtime" >> "$BACKUP_LOG_FILE"

@@ -19,8 +19,15 @@ function prepare_recover(){
 	empty_pgdata
 }
 
+function adjust_pg_hba() {
+	#remove ssl requirements
+	sed -i  '/ssl/d' /var/lib/postgresql/data/pg_hba.conf
+	#remove possible custom directories
+	sed -i  '/dir/d' /var/lib/postgresql/data/postgresql.conf
+}
+
 function start_postgres() {
-	#adjust_pg_hba
+	adjust_pg_hba
 	run_postgres
 }
 
