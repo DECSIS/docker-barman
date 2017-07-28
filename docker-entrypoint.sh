@@ -33,8 +33,7 @@ generate_cron () {
 ensure_permissions() {
 	touch "$BARMAN_LOG_FILE"
 	for path in \
-		/etc/barman.conf \
-		"$BARMAN_BARMAN_HOME" \
+		/etc/barman.conf \		
 		"$BARMAN_CONFIGURATION_FILES_DIRECTORY" \
 		"$BARMAN_LOG_FILE" \
 	; do
@@ -43,7 +42,7 @@ ensure_permissions() {
 }
 
 prometheus_metrics_exporter_deamon(){
-	python /opt/barman/scripts/prom_exporter.py >> "$PROM_EXPORTER_LOG_FILE" &	
+	python /opt/barman/scripts/prom_exporter.py >> "$PROM_EXPORTER_LOG_FILE" 2>&1 &	
 }
 
 if [ "$1" = 'barman' ]; then
@@ -52,7 +51,7 @@ if [ "$1" = 'barman' ]; then
 	generate_cron	
 	ensure_permissions
 	prometheus_metrics_exporter_deamon	
-	exec gosu barman bash -c 'tail -f "$BARMAN_LOG_FILE" "$PROM_EXPORTER_LOG_FILE" 2>&1'
+	exec gosu barman dockerize -stdout "$BARMAN_LOG_FILE" -stderr "$BARMAN_LOG_FILE" -stdout "$PROM_EXPORTER_LOG_FILE"
 fi
 
 exec "$@"

@@ -11,8 +11,8 @@
 # BARMAN_STATUS: status of the backup
 # BARMAN_VERSION: version of Barman
 
-set -e
-
+set -ex
+echo "Backup done creating metrics"
 BACKUP_LOG_FILE="${BARMAN_BARMAN_HOME}/prometheus_exporter_work/backups_$BARMAN_SERVER.log"
 
 BACKUP_END_TIME=$(date +%s%N)
@@ -21,3 +21,18 @@ BACKUP_DURATION_SECONDS=$(((BACKUP_END_TIME-BACKUP_START_TIME)/1000000000))
 
 echo "$BARMAN_SERVER $BARMAN_BACKUP_ID end $BACKUP_END_TIME" >> "$BACKUP_LOG_FILE"
 echo "$BARMAN_SERVER $BARMAN_BACKUP_ID duration $BACKUP_DURATION_SECONDS" >> "$BACKUP_LOG_FILE"
+conf_file="${BARMAN_CONFIGURATION_FILES_DIRECTORY}/${BARMAN_SERVER}.conf";
+
+echo "Looking for recover configs in $conf_file"
+REC_SSH_CMD="$(grep "#:backup_recovery_ssh_cmd" $conf_file |cut -d'=' -f2 | xargs)"
+if [[ ! -z $REC_SSH_CMD ]]; then
+	start=`date +%s`
+    if /opt/barman/scripts/recover.sh $BARMAN_SERVER $BARMAN_BACKUP_ID "$REC_SSH_CMD"; then
+		echo "$BARMAN_SERVER $BARMAN_BACKUP_ID rec_status 0" >> "$BACKUP_LOG_FILE"        
+	else
+		echo "$BARMAN_SERVER $BARMAN_BACKUP_ID rec_status 1" >> "$BACKUP_LOG_FILE"        		
+    fi 
+	end=`date +%s`
+	rec_runtime=$((end-start))
+	echo "$BARMAN_SERVER $BARMAN_BACKUP_ID recovery $rec_runtime" >> "$BACKUP_LOG_FILE"
+fi
