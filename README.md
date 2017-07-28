@@ -93,6 +93,7 @@ It will generate the following metrics:
 * *barman_database_size_bytes* Database size in bytes
 * *barman_backup_duration_seconds* Backup duration in seconds
 * *barman_recovery_duration_seconds* Recovery duration in seconds
+* *barman_recovery_status* Recovery status per database
 * *barman_backup_window_seconds* Backup window covered by all existing backups
 * *barman_last_backup_age_seconds* Last backup age
 * *barman_current_redundancy* Number of existing backups
