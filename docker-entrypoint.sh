@@ -33,8 +33,7 @@ generate_cron () {
 ensure_permissions() {
 	touch "$BARMAN_LOG_FILE"
 	for path in \
-		/etc/barman.conf \
-		"$BARMAN_BARMAN_HOME" \
+		/etc/barman.conf \		
 		"$BARMAN_CONFIGURATION_FILES_DIRECTORY" \
 		"$BARMAN_LOG_FILE" \
 	; do
