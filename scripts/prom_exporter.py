@@ -106,9 +106,9 @@ def fetch_metric_from_log_file(duration_type,server,backup_name):
 			command = ["grep", "{} {}".format(backup_name,duration_type), backup_log_file]
 			grep_output = subprocess.check_output(command)			
 			return grep_output.split()[3]
-		except subprocess.CalledProcessError as e:		
-			print 'Command failed: {}'.format(' '.join(command))
-			print "{} | {} | {}".format(e.returncode,e.cmd,e.output)
+		except subprocess.CalledProcessError as e:					
+			#print 'Command failed: {}'.format(' '.join(command))
+			#print "{} | {} | {}".format(e.returncode,e.cmd,e.output)
 			return None
 
 def get_backup_log_file(server):
