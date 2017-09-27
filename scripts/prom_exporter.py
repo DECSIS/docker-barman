@@ -123,13 +123,12 @@ def fetch_metric_from_log_file(duration_type,server,backup_name):
 			return None
 
 def get_backup_log_file(server):
-#	return "{}/prometheus_exporter_work/backups_{}.log".format(os.environ["BARMAN_BARMAN_HOME"],server)
 	backup_log_file = os.getenv("BACKUP_LOG_FILE")
 	if backup_log_file is None:
 		backup_dir = os.getenv("BACKUP_LOG_DIR")
 		if backup_dir is not None:
 			backup_log_file = "{}/backups_{}.log".format(backup_dir,server)
-	print "debug: backup_log_file={}".format(backup_log_file)
+	#print "debug: backup_log_file={}".format(backup_log_file)
 	return backup_log_file
 
 
