@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# this exporter gathers barman metrics in 2 steps (2. step optional, depending if log-file is found):
+# 1. barman check output
+# 2. the barman backup log file(s)
+# For the 2.step, the required log file name is set from the first found ENV var in the list:
+# BACKUP_LOG_FILE: backup_log_file=$BACKUP_LOG_FILE
+# BACKUP_LOG_DIR:  backup_log_file=$BACKUP_LOG_DIR/backups_${BARMAN_SERVER}.log
+#
 from prometheus_client import start_http_server, Gauge
 from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily, REGISTRY
 import subprocess
@@ -102,6 +110,8 @@ def recovery_status(server,backup_name):
 
 def fetch_metric_from_log_file(duration_type,server,backup_name):
 	backup_log_file = get_backup_log_file(server)
+	if backup_log_file is None:
+		return None
 	if os.path.isfile(backup_log_file):
 		try:
 			command = ["grep", "{} {}".format(backup_name,duration_type), backup_log_file]
@@ -113,7 +123,15 @@ def fetch_metric_from_log_file(duration_type,server,backup_name):
 			return None
 
 def get_backup_log_file(server):
-	return "{}/prometheus_exporter_work/backups_{}.log".format(os.environ["BARMAN_BARMAN_HOME"],server)
+#	return "{}/prometheus_exporter_work/backups_{}.log".format(os.environ["BARMAN_BARMAN_HOME"],server)
+	backup_log_file = os.getenv("BACKUP_LOG_FILE")
+	if backup_log_file is None:
+		backup_dir = os.getenv("BACKUP_LOG_DIR")
+		if backup_dir is not None:
+			backup_log_file = "{}/backups_{}.log".format(backup_dir,server)
+	print "debug: backup_log_file={}".format(backup_log_file)
+	return backup_log_file
+
 
 def parse_date_from_backup_name(backup_name):
 	try:
