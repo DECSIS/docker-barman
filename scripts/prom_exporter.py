@@ -131,7 +131,9 @@ REGISTRY.register(CustomCollector())
 
 if __name__ == '__main__':
     # Start up the server to expose the metrics.
-    start_http_server(8000)
+    exporter_port = int(os.getenv("BARMAN_EXPORTER_PORT", 8000))
+    start_http_server(exporter_port)
+    print "prom_exporter started, listening on port: {}".format(exporter_port)
     # Generate some requests.
     while True:
         time.sleep(10000)
