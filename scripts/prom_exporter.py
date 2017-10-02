@@ -63,7 +63,13 @@ def setup_metrics():
 
 def process_server(server,server_data,metrics):
 	# check 'connection_error' with 'get' to avoid a KeyError if key is missing (as in barman v1.6)
-	if not server_data['status'].get('connection_error'):
+	if server_data['status'].get('connection_error', False):
+		print "WARN: skip server={}, due to status.connection_error".format(server)
+		return
+	# if no 'current_size' exists, WARN and return (can happen early in container startup, barman unable to connect to psql)
+	if not 'current_size' in server_data['status']:
+		print "WARN: cannot process server={}, due to missing field status.current_size".format(server)
+	else:
 		add_metric_or_pass(metrics['database_size'], [server], server_data['status']['current_size'])
 		add_metric_or_pass(metrics['redundancy_expected'], [server], server_data['config']['minimum_redundancy'])				
 		done_backup_names = get_done_backups(server_data)
