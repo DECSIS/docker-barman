@@ -2,9 +2,8 @@ from prometheus_client import start_http_server, Gauge
 from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily, REGISTRY
 import subprocess
 import time
-import random
-import re
 import json
+import logging
 import os
 import os.path
 from  datetime import datetime
@@ -15,12 +14,14 @@ def barman_list_servers():
 	for line in p.split('\n'):
 		if line:
 			servers.append(line)
+	logging.debug("spawned cmd: barman list-server  found %s servers", len(servers))
 	return servers
 
 def barman_check():
 	status = GaugeMetricFamily('barman_status', 'Status given by barman check', labels=['server_name'])
 	for server in barman_list_servers():
 		try:
+			logging.debug("spawned cmd: barman check %s", server)
 			check_string = subprocess.check_output(["barman", "check", server, "--nagios"])
 			status.add_metric([server], 0)
 		except subprocess.CalledProcessError as e:
@@ -40,12 +41,12 @@ def add_metric_or_pass(metric,labels,value,default_value=None):
 def backup_metrics():
 	metrics = setup_metrics()
 	diagnose_data = json.loads(subprocess.check_output(["barman","diagnose"]))
+	logging.debug("spawned cmd: barman diagnose")
 	try:
 		for server,server_data in diagnose_data['servers'].iteritems():
 			process_server(server,server_data,metrics)
 	except Exception as e:
-		print e
-		print "ERROR: DIAGNOSE DATA -> {}".format(diagnose_data)
+		logging.exception("error processing DIAGNOSE DATA -> %s", diagnose_data)
 	return metrics.values()
 
 def setup_metrics():
@@ -62,13 +63,14 @@ def setup_metrics():
 	return metrics
 
 def process_server(server,server_data,metrics):
+	logging.debug("process_server for server=%s: ", server)
 	# check 'connection_error' with 'get' to avoid a KeyError if key is missing (as in barman v1.6)
 	if server_data['status'].get('connection_error', False):
-		print "WARN: skip server={}, due to status.connection_error".format(server)
+		logging.warn("skip server=%s, due to status.connection_error", server)
 		return
 	# if no 'current_size' exists, WARN and return (can happen early in container startup, barman unable to connect to psql)
 	if not 'current_size' in server_data['status']:
-		print "WARN: cannot process server={}, due to missing field status.current_size".format(server)
+		logging.warn("cannot process server=%s, due to missing field status.current_size", server)
 	else:
 		add_metric_or_pass(metrics['database_size'], [server], server_data['status']['current_size'])
 		add_metric_or_pass(metrics['redundancy_expected'], [server], server_data['config']['minimum_redundancy'])				
@@ -85,6 +87,7 @@ def process_server(server,server_data,metrics):
 			add_metric_or_pass(metrics['backup_duration'],[server], backup_duration(server,last_backup_name))														
 			add_metric_or_pass(metrics['recovery_duration'],[server], recovery_duration(server,last_backup_name))
 			add_metric_or_pass(metrics['recovery_status'],[server], recovery_status(server,last_backup_name))		
+		logging.debug("process_server DONE for server=%s: ", server)
 
 def server_has_backups(server_data):
 	len(server_data['backups']) > 0
@@ -128,18 +131,24 @@ def parse_date_from_backup_name(backup_name):
 		return None
 
 class CustomCollector(object):
-    def collect(self):
-        yield barman_check()
-        for metric in backup_metrics():
-        	yield metric
+	def collect(self):
+		#logging.debug("prom_exporter collect called")
+		yield barman_check()
+		for metric in backup_metrics():
+			yield metric
 
 REGISTRY.register(CustomCollector())
 
 if __name__ == '__main__':
-    # Start up the server to expose the metrics.
-    exporter_port = int(os.getenv("BARMAN_EXPORTER_PORT", 8000))
-    start_http_server(exporter_port)
-    print "prom_exporter started, listening on port: {}".format(exporter_port)
-    # Generate some requests.
-    while True:
-        time.sleep(10000)
+	logLevel = os.getenv("BARMAN_EXPORTER_LOGLEVEL", "DEBUG")
+	rootLogger = logging.getLogger()
+	rootLogger.setLevel(logging.getLevelName(logLevel))
+
+	# Start up the server to expose the metrics.
+	exporter_port = int(os.getenv("BARMAN_EXPORTER_PORT", 8000))
+	logging.debug("prom_exporter starting on port: %s", exporter_port)
+	start_http_server(exporter_port)
+	logging.info("prom_exporter started, listening on port: %s", exporter_port)
+	# Generate some requests.
+	while True:
+		time.sleep(10000)
