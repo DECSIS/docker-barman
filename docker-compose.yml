@@ -58,11 +58,13 @@ services:
       - ssl_key_file=/server.key
   barman:
     image: decsis/pg-barman
+    build: .
     environment:
       BARMAN_LOG_LEVEL: WARNING
     volumes:
       - ./example/postgreslab1.conf:/etc/barman.d/postgreslab1.conf
       - ./example/postgreslab2.conf:/etc/barman.d/postgreslab2.conf
+      - ./scripts:/opt/barman/scripts #enables live script edition
     ports:
       - 8000:8000/tcp
   prometheus:
@@ -71,3 +73,12 @@ services:
       - 9090:9090/tcp
     volumes:
       - ./example/prometheus_config.yml:/etc/prometheus/prometheus.yml
+  rec_pg:
+    image: decsis/postgres-ssh
+    build: recovery_pg/.
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./recovery_pg/scripts/docker_entrypoint.sh:/docker_entrypoint_rec.sh #enables live script edition
+    ports:
+      - 2222:22/tcp

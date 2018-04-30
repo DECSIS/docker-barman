@@ -16,7 +16,7 @@ The image currently is focused on streaming replication so no rsync streaming or
 
     $ docker run -v /path/to/db/configs:/etc/barman.d/ -v /path/to/backupdata/:/var/lib/barman/ decsis/pg-barman
 
-For an full overview of using this image with a server check the example configuration for in the [docker-compose.yml](). If you run this compose file you will obtain two PostgresSQL servers and a Barman scheduled to make full backups every hour for server1 and every 6 hours to server2. Also a Prometheus server will be available to gather metrics from the exporter included in the image.
+For an full overview of using this image with a server check the example configuration for in the [docker-compose.yml](https://github.com/DECSIS/docker-barman/blob/master/docker-compose.yml). If you run this compose file you will obtain two PostgresSQL servers and a Barman scheduled to make full backups every hour for server1 and every 6 hours to server2. Also a Prometheus server will be available to gather metrics from the exporter included in the image.
 
     docker-compose up
 
@@ -57,8 +57,11 @@ For server configurations provide a file per server in `/etc/barman.d/` as state
 Additionaly you can pass a extra configuration in these files for scheduling backups:
 
     #:backup_cron = 0 10 * * *
+    #:backup_recovery_ssh_cmd = "ssh root@rec_pg"
 
-The image runs a every minute script that maintains (insert, update and delete) the `crontab` gathering this preoperty from the available `*.conf` files. The resulting `crontab` for the previous example:
+`backup_cron` 
+
+The image runs a every minute script that maintains (insert, update and delete) the `crontab` gathering this property from the available `*.conf` files. The resulting `crontab` for the previous example:
 
     MAILTO=""
     BARMAN_LOG_FILE=/var/log/barman.log
@@ -68,10 +71,15 @@ The image runs a every minute script that maintains (insert, update and delete) 
     BARMAN_CONFIGURATION_FILES_DIRECTORY=/etc/barman.d
     * * * * * barman cron
     * * * * * /opt/barman/scripts/backup_scheduler.sh
-    28 10 * * * barman backup postgreslab3
+    0 10 * * * barman backup postgreslab3
 
+`backup_recovery_ssh_cmd`
 
-**Important**: Please notice that this additional property is prefixed by `#:` to avoid barman complaining about an unknown property. The `:` is there to make clear this is not just a comment.
+If this property is present after each backup of the corresponding database a recovery attempt will be performed and its duration registered as a Prometheus metric.
+
+Currently this only works with the companion image https://hub.docker.com/r/decsis/postgres-ssh/ .
+
+**Important**: Please notice that this additional properties are prefixed by `#:` to avoid barman complaining about an unknown property. The `:` is there to make clear this is not just a comment.
 
 ## Available metrics
 
@@ -84,6 +92,8 @@ It will generate the following metrics:
 * *barman_expected_redundancy* Number of expected backups as defined in config minimum_redundancy
 * *barman_database_size_bytes* Database size in bytes
 * *barman_backup_duration_seconds* Backup duration in seconds
+* *barman_recovery_duration_seconds* Recovery duration in seconds
+* *barman_recovery_status* Recovery status per database
 * *barman_backup_window_seconds* Backup window covered by all existing backups
 * *barman_last_backup_age_seconds* Last backup age
 * *barman_current_redundancy* Number of existing backups
