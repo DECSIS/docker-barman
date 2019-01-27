@@ -34,6 +34,16 @@ Just run:
 Give it a minute or so to settle up and then execute the following to make PostgreSQL servers switch to another transaction log file and allows barman to be ready to do backups:
 
     docker exec -u barman -it dockerbarman_barman_1 barman switch-xlog --force all
+    
+Prepare the recovery ssh connexion from barman to rec_pg:
+
+    docker exec -u barman -it dockerbarman_barman_1 ssh-keygen -t rsa && cat ~/.ssh/id_rsa.pub
+
+Allow the barman's public key just displayed on rec_pg: 
+
+    docker exec -u barman -it dockerbarman_rec_pg_1 sh 
+    # echo the key to ~/.ssh/authorized_key 
+    # then chhmod 0600 ~/.ssh/authorized_key
 
 Finally execute the backups:
 
