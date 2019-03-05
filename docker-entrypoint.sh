@@ -32,6 +32,8 @@ generate_cron () {
 
 ensure_permissions() {
 	touch "$BARMAN_LOG_FILE"
+	chmod 0755 "$BARMAN_BARMAN_HOME" 
+  chmod 0600 "$BARMAN_BARMAN_HOME/.ssh/*" || true
 	for path in \
 		/etc/barman.conf \
 		"$BARMAN_CONFIGURATION_FILES_DIRECTORY" \
@@ -45,11 +47,15 @@ prometheus_metrics_exporter_deamon(){
 	python /opt/barman/scripts/prom_exporter.py >> "$PROM_EXPORTER_LOG_FILE" 2>&1 &	
 }
 
+ssh_daemon(){
+	/etc/init.d/ssh start
+}
 if [ "$1" = 'barman' ]; then
 	rm -rf /tmp/*	
 	generate_configuration
 	generate_cron	
 	ensure_permissions
+	ssh_daemon
 	prometheus_metrics_exporter_deamon	
 	exec gosu barman dockerize -stdout "$BARMAN_LOG_FILE" -stderr "$BARMAN_LOG_FILE" -stdout "$PROM_EXPORTER_LOG_FILE"
 fi
