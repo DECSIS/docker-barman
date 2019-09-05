@@ -35,7 +35,7 @@ Give it a minute or so to settle up and then execute the following to make Postg
 
     docker exec -u barman -it dockerbarman_barman_1 barman switch-xlog --force all
     
-Prepare the recovery ssh connexion from barman to rec_pg:
+Prepare the recovery ssh connection from barman to rec_pg:
 
     docker exec -u barman -it dockerbarman_barman_1 ssh-keygen -t rsa && cat ~/.ssh/id_rsa.pub
 
